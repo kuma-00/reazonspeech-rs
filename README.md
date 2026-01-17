@@ -53,7 +53,7 @@ cargo run --release -- --input path/to/your_audio.wav
 本プロジェクトは [ReazonSpeech](https://github.com/reazon-research/ReazonSpeech) のモデルを使用しています。
 モデルおよびオリジナルの実装に関する著作権は株式会社レアゾン・ホールディングスに帰属します。
 
-- [ReazonSpeech プロジェクト](https://reazon-research.github.io/ReazonSpeech/)
+- [ReazonSpeech プロジェクト](https://research.reazon.jp/)
 - [Hugging Face: reazonspeech-k2-v2](https://huggingface.co/reazon-research/reazonspeech-k2-v2)
 
 ## ライセンス
