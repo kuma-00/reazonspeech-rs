@@ -3,8 +3,14 @@ use hf_hub::{api::sync::{ApiBuilder}, Cache, Repo, RepoType};
 use sherpa_rs::zipformer::{ZipFormer, ZipFormerConfig};
 use std::path::PathBuf;
 
+pub struct TranscriptionResult {
+    pub text: String,
+    pub audio_duration: f32,
+}
+
 pub struct ReazonSpeech {
     model: ZipFormer,
+    provider: String,
 }
 
 impl ReazonSpeech {
@@ -26,6 +32,7 @@ impl ReazonSpeech {
             "cpu".to_string()
         };
 
+        let provider_name = provider.clone();
         let config = ZipFormerConfig {
             encoder: encoder.to_string_lossy().to_string(),
             decoder: decoder.to_string_lossy().to_string(),
@@ -37,7 +44,11 @@ impl ReazonSpeech {
         };
 
         let model = ZipFormer::new(config).map_err(|e| anyhow::anyhow!("{}", e))?;
-        Ok(Self { model })
+        Ok(Self { model, provider: provider_name })
+    }
+
+    pub fn provider(&self) -> &str {
+        &self.provider
     }
 
     fn download_models(cache_dir: Option<PathBuf>) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
@@ -87,7 +98,7 @@ impl ReazonSpeech {
         Ok((encoder, decoder, joiner, tokens))
     }
 
-    pub fn transcribe(&mut self, wav_path: PathBuf) -> Result<String> {
+    pub fn transcribe(&mut self, wav_path: PathBuf) -> Result<TranscriptionResult> {
         let (mut samples, sample_rate) = sherpa_rs::read_audio_file(&wav_path.to_string_lossy())
             .map_err(|e| anyhow::anyhow!("{}", e))?;
 
@@ -117,6 +128,9 @@ impl ReazonSpeech {
         padded_samples.extend_from_slice(&padding);
 
         let text = self.model.decode(sample_rate, padded_samples);
-        Ok(text)
+        Ok(TranscriptionResult {
+            text,
+            audio_duration: duration,
+        })
     }
 }
