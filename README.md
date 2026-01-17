@@ -43,7 +43,10 @@ cargo run --release -- --input path/to/your_audio.wav
 
 ### コマンドライン引数
 - `-i, --input <PATH>`: 入力WAVファイル (必須)。
-- `-m, --model-dir <PATH>`: ローカルのモデルディレクトリ (オプション。指定しない場合はHFから自動ダウンロード)。
+- `-m, --model-dir <PATH>`: ローカルのモデルディレクトリ (オプション)。
+- `-d, --device <STR>`: 推論デバイス (`cpu`, `cuda`, `coreml`)。macOSではデフォルトで `coreml`、その他は `cpu`。
+- `-p, --precision <STR>`: 推論精度 (`fp32`, `int8`, `int8-fp32`)。デフォルトは `fp32`。
+- `-l, --language <STR>`: 言語モデル (`ja`, `ja-en`, `ja-en-mls-5k`)。デフォルトは `ja`。
 
 ## ライセンス・引用
 

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use reazonspeech_rs::ReazonSpeech;
+use reazonspeech_rs::{Language, Precision, ReazonSpeech};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -14,6 +14,18 @@ struct Args {
     /// Optional path to the model directory. If not provided, models will be downloaded from HF Hub.
     #[arg(short, long)]
     model_dir: Option<PathBuf>,
+
+    /// Inference device ("cpu", "cuda", "coreml"). Defaults to coreml on macOS, cpu otherwise.
+    #[arg(short, long)]
+    pub device: Option<String>,
+
+    /// Model precision ("fp32", "int8", "int8-fp32")
+    #[arg(short, long)]
+    pub precision: Option<Precision>,
+
+    /// Language/Model variation ("ja", "ja-en", "ja-en-mls-5k")
+    #[arg(short, long)]
+    pub language: Option<Language>,
 }
 
 #[tokio::main]
@@ -22,7 +34,7 @@ async fn main() -> Result<()> {
 
     println!("Initializing ReazonSpeech (k2-asr)...");
     let start_init = Instant::now();
-    let mut model = ReazonSpeech::new(args.model_dir)?;
+    let mut model = ReazonSpeech::new(args.model_dir, args.device, args.precision, args.language)?;
     let duration_init = start_init.elapsed();
     println!("Initialization took: {:.2}s (Provider: {})", duration_init.as_secs_f32(), model.provider());
 

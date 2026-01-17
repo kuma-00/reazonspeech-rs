@@ -1,5 +1,8 @@
-use anyhow::{Context, Result};
-use hf_hub::{api::sync::{ApiBuilder}, Cache, Repo, RepoType};
+mod downloader;
+
+pub use downloader::{Language, Precision};
+use downloader::download_models;
+use anyhow::Result;
 use sherpa_rs::zipformer::{ZipFormer, ZipFormerConfig};
 use std::path::PathBuf;
 
@@ -14,10 +17,13 @@ pub struct ReazonSpeech {
 }
 
 impl ReazonSpeech {
-    /// Initialize ReazonSpeech with models. 
-    /// If `model_dir` is None, it will download models from Hugging Face Hub.
-    pub fn new(model_dir: Option<PathBuf>) -> Result<Self> {
-        let (encoder, decoder, joiner, tokens) = Self::download_models(model_dir)?;
+    pub fn new(
+        model_dir: Option<PathBuf>,
+        device: Option<String>,
+        precision: Option<Precision>,
+        language: Option<Language>,
+    ) -> Result<Self> {
+        let (encoder, decoder, joiner, tokens) = download_models(model_dir, precision, language)?;
 
         // Validate files exist
         for f in &[&encoder, &decoder, &joiner, &tokens] {
@@ -26,7 +32,9 @@ impl ReazonSpeech {
             }
         }
 
-        let provider = if cfg!(target_os = "macos") {
+        let provider = if let Some(d) = device {
+            d
+        } else if cfg!(target_os = "macos") {
             "coreml".to_string()
         } else {
             "cpu".to_string()
@@ -49,53 +57,6 @@ impl ReazonSpeech {
 
     pub fn provider(&self) -> &str {
         &self.provider
-    }
-
-    fn download_models(cache_dir: Option<PathBuf>) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
-        let repo_id = "reazon-research/reazonspeech-k2-v2".to_string();
-        let cache = if let Some(dir) = cache_dir {
-            Cache::new(dir)
-        } else {
-            Cache::default()
-        };
-        let repo = Repo::new(repo_id.clone(), RepoType::Model);
-        let repo_cache = cache.repo(repo);
-
-        let files = [
-            "encoder-epoch-99-avg-1.onnx",
-            "decoder-epoch-99-avg-1.onnx",
-            "joiner-epoch-99-avg-1.onnx",
-            "tokens.txt",
-        ];
-
-        // Check if all files exist in cache
-        let mut paths = Vec::new();
-        for file in &files {
-            if let Some(path) = repo_cache.get(file) {
-                paths.push(path);
-            }
-        }
-
-        if paths.len() == 4 {
-            return Ok((
-                paths[0].clone(),
-                paths[1].clone(),
-                paths[2].clone(),
-                paths[3].clone(),
-            ));
-        }
-
-        // Otherwise, use Api to download
-        let api = ApiBuilder::from_cache(cache).build().context("Failed to build HF Api")?;
-        let api_repo = api.model(repo_id);
-
-        println!("Downloading model files from Hugging Face...");
-        let encoder = api_repo.get(files[0])?;
-        let decoder = api_repo.get(files[1])?;
-        let joiner = api_repo.get(files[2])?;
-        let tokens = api_repo.get(files[3])?;
-
-        Ok((encoder, decoder, joiner, tokens))
     }
 
     pub fn transcribe(&mut self, wav_path: PathBuf) -> Result<TranscriptionResult> {
