@@ -20,13 +20,19 @@ impl ReazonSpeech {
             }
         }
 
+        let provider = if cfg!(target_os = "macos") {
+            "coreml".to_string()
+        } else {
+            "cpu".to_string()
+        };
+
         let config = ZipFormerConfig {
             encoder: encoder.to_string_lossy().to_string(),
             decoder: decoder.to_string_lossy().to_string(),
             joiner: joiner.to_string_lossy().to_string(),
             tokens: tokens.to_string_lossy().to_string(),
             num_threads: Some(4),
-            provider: Some("cpu".to_string()),
+            provider: Some(provider),
             debug: false,
         };
 
