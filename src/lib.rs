@@ -88,10 +88,35 @@ impl ReazonSpeech {
     }
 
     pub fn transcribe(&mut self, wav_path: PathBuf) -> Result<String> {
-        let (samples, sample_rate) = sherpa_rs::read_audio_file(&wav_path.to_string_lossy())
+        let (mut samples, sample_rate) = sherpa_rs::read_audio_file(&wav_path.to_string_lossy())
             .map_err(|e| anyhow::anyhow!("{}", e))?;
 
-        let text = self.model.decode(sample_rate, samples);
+        // 1. Duration check
+        let duration = samples.len() as f32 / sample_rate as f32;
+        const TOO_LONG_SECONDS: f32 = 30.0;
+        if duration > TOO_LONG_SECONDS {
+            eprintln!(
+                "Warning: Passing a long audio input ({:.1}s) is not recommended, \
+                 because K2 will require a large amount of memory. \
+                 Read the upstream discussion for more details: \
+                 https://github.com/k2-fsa/icefall/issues/1680",
+                duration
+            );
+        }
+
+        // 2. Padding (pad_audio equivalent)
+        // Python: pad_audio(audio, 0.9) -> np.pad(..., pad_width=int(0.9 * sr), mode='constant')
+        const PAD_SECONDS: f32 = 0.9;
+        let pad_samples = (PAD_SECONDS * sample_rate as f32) as usize;
+        let padding = vec![0.0f32; pad_samples];
+
+        // Pad both sides
+        let mut padded_samples = Vec::with_capacity(padding.len() + samples.len() + padding.len());
+        padded_samples.extend_from_slice(&padding);
+        padded_samples.append(&mut samples);
+        padded_samples.extend_from_slice(&padding);
+
+        let text = self.model.decode(sample_rate, padded_samples);
         Ok(text)
     }
 }
