@@ -1,5 +1,5 @@
-use anyhow::{Result, Context};
-use hf_hub::api::sync::Api;
+use anyhow::{Context, Result};
+use hf_hub::{api::sync::{ApiBuilder}, Cache, Repo, RepoType};
 use sherpa_rs::zipformer::{ZipFormer, ZipFormerConfig};
 use std::path::PathBuf;
 
@@ -11,16 +11,7 @@ impl ReazonSpeech {
     /// Initialize ReazonSpeech with models. 
     /// If `model_dir` is None, it will download models from Hugging Face Hub.
     pub fn new(model_dir: Option<PathBuf>) -> Result<Self> {
-        let (encoder, decoder, joiner, tokens) = if let Some(dir) = model_dir {
-            (
-                dir.join("encoder-epoch-99-avg-1.onnx"),
-                dir.join("decoder-epoch-99-avg-1.onnx"),
-                dir.join("joiner-epoch-99-avg-1.onnx"),
-                dir.join("tokens.txt"),
-            )
-        } else {
-            Self::download_models()?
-        };
+        let (encoder, decoder, joiner, tokens) = Self::download_models(model_dir)?;
 
         // Validate files exist
         for f in &[&encoder, &decoder, &joiner, &tokens] {
@@ -43,15 +34,49 @@ impl ReazonSpeech {
         Ok(Self { model })
     }
 
-    fn download_models() -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
-        let api = Api::new().context("Failed to create HF Api")?;
-        let repo = api.model("reazon-research/reazonspeech-k2-v2".to_string());
+    fn download_models(cache_dir: Option<PathBuf>) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
+        let repo_id = "reazon-research/reazonspeech-k2-v2".to_string();
+        let cache = if let Some(dir) = cache_dir {
+            Cache::new(dir)
+        } else {
+            Cache::default()
+        };
+        let repo = Repo::new(repo_id.clone(), RepoType::Model);
+        let repo_cache = cache.repo(repo);
+
+        let files = [
+            "encoder-epoch-99-avg-1.onnx",
+            "decoder-epoch-99-avg-1.onnx",
+            "joiner-epoch-99-avg-1.onnx",
+            "tokens.txt",
+        ];
+
+        // Check if all files exist in cache
+        let mut paths = Vec::new();
+        for file in &files {
+            if let Some(path) = repo_cache.get(file) {
+                paths.push(path);
+            }
+        }
+
+        if paths.len() == 4 {
+            return Ok((
+                paths[0].clone(),
+                paths[1].clone(),
+                paths[2].clone(),
+                paths[3].clone(),
+            ));
+        }
+
+        // Otherwise, use Api to download
+        let api = ApiBuilder::from_cache(cache).build().context("Failed to build HF Api")?;
+        let api_repo = api.model(repo_id);
 
         println!("Downloading model files from Hugging Face...");
-        let encoder = repo.get("encoder-epoch-99-avg-1.onnx")?;
-        let decoder = repo.get("decoder-epoch-99-avg-1.onnx")?;
-        let joiner = repo.get("joiner-epoch-99-avg-1.onnx")?;
-        let tokens = repo.get("tokens.txt")?;
+        let encoder = api_repo.get(files[0])?;
+        let decoder = api_repo.get(files[1])?;
+        let joiner = api_repo.get(files[2])?;
+        let tokens = api_repo.get(files[3])?;
 
         Ok((encoder, decoder, joiner, tokens))
     }
