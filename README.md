@@ -1,13 +1,13 @@
 # ReazonSpeech Rust (reazonspeech-rs)
 
 ReazonSpeechのk2-asr (Zipformer) モデルをRustに移植した実装です。
-Hugging Face Hubからのモデル自動ダウンロード機能を備えており、Mac M4 (Apple Silicon) を含むマルチプラットフォームで動作します。
+Hugging Face Hubからのモデル自動ダウンロード機能を備えており、マルチプラットフォームで動作します。
 
 ## 特徴
 
-- **高速かつ軽量**: `sherpa-onnx` を使用した効率的な推論。macOS (M1/M2/M3/M4) では **CoreML** を自動的に使用し、Apple Neural Engineによる高速化が行われます。
-- **モデル自動ダウンロード**: 初回実行時に `reazon-research/reazonspeech-k2-v2` モデルをHugging Faceから自動取得。
-- **ポータブル**: Mac M4 (ARM64) および Linux での動作を確認済み。
+- **高速かつ軽量**: `sherpa-onnx` を使用した効率的な推論。macOSでは **CoreML** を自動的に使用し、Apple Neural Engineによる高速化が行われます。その他OSでは **GPU** を使用して高速に推論できます。
+- **モデル自動ダウンロード**: 初回実行時に `reazon-research/reazonspeech-k2-v2` モデルをHugging Faceから自動取得します。
+- **ポータブル**: macOS、Linuxでの動作を確認済み。
 - **シンプル**: 音声ファイルを指定するだけで日本語のテキスト書き起こしが可能。
 
 ## セットアップ
