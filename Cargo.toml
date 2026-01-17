@@ -1,0 +1,12 @@
+[package]
+name = "reazonspeech-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sherpa-rs = { version = "0.6.8", features = ["download-binaries"] }
+hf-hub = "0.4.1"
+tokio = { version = "1", features = ["full"] }
+hound = "3.5"
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
