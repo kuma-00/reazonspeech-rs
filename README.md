@@ -52,3 +52,13 @@ cargo run --release -- --input path/to/your_audio.wav
 
 - [ReazonSpeech プロジェクト](https://reazon-research.github.io/ReazonSpeech/)
 - [Hugging Face: reazonspeech-k2-v2](https://huggingface.co/reazon-research/reazonspeech-k2-v2)
+
+## ライセンス
+
+このプロジェクト自体は **Apache License 2.0** の下で公開されています。
+詳細は [LICENSE](LICENSE) ファイルを参照してください。
+
+また、本プロジェクトが配布・使用する **ReazonSpeech モデル** も **Apache License 2.0** の下で提供されています。
+その他の依存ライブラリ：
+- `sherpa-onnx`: Apache-2.0
+- `sherpa-rs`: MIT
