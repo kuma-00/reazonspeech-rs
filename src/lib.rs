@@ -6,6 +6,11 @@ use anyhow::Result;
 use sherpa_rs::zipformer::{ZipFormer, ZipFormerConfig};
 use std::path::PathBuf;
 
+pub struct AudioData {
+    pub samples: Vec<f32>,
+    pub sample_rate: u32,
+}
+
 pub struct TranscriptionResult {
     pub text: String,
     pub audio_duration: f32,
@@ -59,9 +64,8 @@ impl ReazonSpeech {
         &self.provider
     }
 
-    pub fn transcribe(&mut self, wav_path: PathBuf) -> Result<TranscriptionResult> {
-        let (mut samples, sample_rate) = sherpa_rs::read_audio_file(&wav_path.to_string_lossy())
-            .map_err(|e| anyhow::anyhow!("{}", e))?;
+    pub fn transcribe(&mut self, audio: AudioData) -> Result<TranscriptionResult> {
+        let (mut samples, sample_rate) = (audio.samples, audio.sample_rate);
 
         // 1. Duration check
         let duration = samples.len() as f32 / sample_rate as f32;

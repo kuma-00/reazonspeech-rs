@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use reazonspeech_rs::{Language, Precision, ReazonSpeech};
+use reazonspeech_rs::{AudioData, Language, Precision, ReazonSpeech};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -40,7 +40,13 @@ async fn main() -> Result<()> {
 
     println!("Transcribing: {:?}", args.input);
     let start_transcribe = Instant::now();
-    let result = model.transcribe(args.input)?;
+    let (samples, sample_rate) = sherpa_rs::read_audio_file(&args.input.to_string_lossy())
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+    let audio = AudioData {
+        samples,
+        sample_rate,
+    };
+    let result = model.transcribe(audio)?;
     let duration_transcribe = start_transcribe.elapsed();
     let rtf = duration_transcribe.as_secs_f32() / result.audio_duration;
 
